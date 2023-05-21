@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 st.set_page_config(
-     page_title="Модуль работы с Большими Данными веб-приложения ЛаКрул",
+     page_title="Модуль работы с данными веб-приложения ЛаКрул",
      # page_icon="",
      layout="wide",
      initial_sidebar_state="expanded",
@@ -19,11 +19,11 @@ st.set_page_config(
 
 st.sidebar.title("Веб-модуль для работы с данными ЛаКрул")
 
-file_format_type = ["csv", "txt", "xls", "xlsx", "ods", "odt"]
-functions = ["Обзор", "Ложные статистические наблюдения", "Удалить столбцы", "Удалить строки", "Удалить числовые значения", "Переименовать столбцы", "Построить график", "Заполнить утерянные данные", "Слияние данных"]
+file_format_type = ["csv", "xls", "xlsx", "ods", "odt"]
+functions = ["Обзор", "Удалить столбцы", "Удалить строки", "Удалить числовые значения", "Переименовать столбцы", "Построить график", "Заполнить утерянные данные", "Слияние данных"]
 excel_type =["vnd.ms-excel","vnd.openxmlformats-officedocument.spreadsheetml.sheet", "vnd.oasis.opendocument.spreadsheet", "vnd.oasis.opendocument.text"]
 
-uploaded_file = st.sidebar.file_uploader("Загрузите ваш файл", type=file_format_type)
+uploaded_file = st.sidebar.file_uploader("Загрузите ваш файл", type=file_format_type) #Настройки, в том числе и ограничение 200 мб, по умолчанию
 
 if uploaded_file is not None:
 
@@ -41,7 +41,7 @@ if uploaded_file is not None:
     
     describe, shape, columns, num_category, str_category, null_values, dtypes, unique, str_category, column_with_null_values = describe(data)
 
-    multi_function_selector = st.sidebar.multiselect("Выберите столбец для отрисовки графика: ",functions, default=["Обзор"])
+    multi_function_selector = st.sidebar.multiselect("Выберите опцию: ",functions, default=["Обзор"])
 
     st.subheader("Обзор данных")
     st.dataframe(data)
@@ -68,7 +68,7 @@ if uploaded_file is not None:
             number = round((uploaded_file.size*0.000977)*0.000977,2)
             st.write(number)
 
-            st.write("Вид данных")
+            st.write("Размерность набора данных")
             st.write(shape)
             
         with col2:
@@ -76,37 +76,27 @@ if uploaded_file is not None:
             st.write(columns)
         
         with col3:
-            st.text("Количество столбцов")
+            st.text("Числовые столбцы данных")
             st.dataframe(num_category)
         
         with col4:
-            st.text("Строки данных")
+            st.text("Текстовые столбцы данных")
             st.dataframe(str_category)
             
 
         col5, col6, col7, col8= st.columns(4)
 
         with col6:
-            st.text("Тип данных столбцов")
+            st.text("Столбцы типа дата и время")
             st.dataframe(dtypes)
         
         with col7:
-            st.text("Количество уникальных ед. данных")
+            st.text("Количество уникальных записей")
             st.write(unique)
         
         with col5:
-            st.write("Количество пустых данных")
+            st.write("Количество пустых записей")
             st.dataframe(null_values)
-
-# ==================================================================================================
-    if "Ложные статистические наблюдения" in multi_function_selector:
-
-        outliers_selection = st.multiselect("Выберите (или введите) столбец данных", num_category)
-        outliers = outliers(data, outliers_selection)
-        
-        for i in range(len(outliers)):
-            st.image(outliers[i])
-# ===================================================================================================
 
     if "Удалить столбцы" in multi_function_selector:
         
@@ -117,7 +107,6 @@ if uploaded_file is not None:
         
         drop_export = download_data(droped, label="Уделны(отредактированы)")
 
-# =====================================================================================================================================
     if "Удалить строки" in multi_function_selector:
 
         filter_column_selection = st.selectbox("Выберите столбец: ", options=data.columns)
@@ -128,12 +117,10 @@ if uploaded_file is not None:
         
         filtered_export = download_data(filtered_data, label="filtered")
 
-# =============================================================================================================================
-
     if "Удалить числовые значения" in multi_function_selector:
 
         option = st.radio(
-        "Какую фильтрацию вы хотите?",
+        "Как вы хотите организовать удаление?",
         ('Удалить данные в промежутке', 'Удалить данные за промежутком'))
 
         num_filter_column_selection = st.selectbox("Выберите столбец: ", options=num_category)
@@ -160,9 +147,6 @@ if uploaded_file is not None:
         st.write(num_filtered_data)
         num_filtered_export = download_data(num_filtered_data, label="num_filtered")
 
-
-# =======================================================================================================================================
-
     if "Переименовать столбцы" in multi_function_selector:
 
         if 'rename_dict' not in st.session_state:
@@ -173,17 +157,15 @@ if uploaded_file is not None:
         rename_text_data = st.text_input("Введите новое название".format(rename_column_selector), max_chars=50)
 
 
-        if st.button("Сохранить черновик", help="когда вы хотите переименовать несколько столбцов / один столбец, поэтому сначала вам нужно нажать кнопку «Сохранить черновик», чтобы обновить данные, а затем нажать кнопку «Переименовать столбцы»."):
+        if st.button("Сохранить изменения", help="Перед тем как переименовать столбец/столбцы вы должны нажать на кнопку Сохранить изменения, только потом на кнопку Переименовать столбцы"):
             st.session_state.rename_dict[rename_column_selector] = rename_text_data
         st.code(st.session_state.rename_dict)
 
-        if st.button("Переименовать столбец", help="Берет ваши данные и переименовывает столбец по вашему желанию.."):
+        if st.button("Переименовать столбцы", help="Берет ваши данные и переименовывает столбцы по вашему желанию.."):
             rename_column = rename_columns(data, st.session_state.rename_dict)
             st.write(rename_column)
             export_rename_column = download_data(rename_column, label="rename_column")
             st.session_state.rename_dict = {}
-
-# ===================================================================================================================
  
     if "Построить график" in multi_function_selector:
 
@@ -194,8 +176,6 @@ if uploaded_file is not None:
             st.markdown("#### Столбик графика для {} столбца".format(column))
             bar_plot = data[column].value_counts().reset_index().sort_values(by=column, ascending=False)
             st.bar_chart(bar_plot)
-
-# ====================================================================================================================    
 
     if "Заполнить утерянные данные" in multi_function_selector:
         handling_missing_value_option = st.radio("Выберите, что вы хотите сделать", ("Удалить все пустые/нулевые значения", "Заполнить пропущенные значения"))
@@ -264,7 +244,7 @@ if uploaded_file is not None:
                 download_data(concatenating_data, label="concatenating_on_axis")
         
 # ==========================================================================================================================================
-    st.sidebar.info("После использования этого приложения нажмите кнопку «Очистить кэш», чтобы удалить все данные из папки.")
+    st.sidebar.info("После использования модуля нажмите кнопку «Очистить кэш», чтобы удалить все данные из папки.")
     if st.sidebar.button("Очистить кэш"):
         clear_image_cache()
 
