@@ -1,7 +1,7 @@
 from cmath import nan
 from datetime import date
 import streamlit as st
-from helper import data, seconddata, match_elements, describe, outliers, drop_items, download_data, filter_data, num_filter_data, rename_columns, clear_image_cache, handling_missing_values, data_wrangling
+from helper import data, seconddata, match_elements, describe, outliers, delete_columns, download_file, filter_data, delete_numbers, rename_columns, clear_image_cache, delete_missing_values, data_wrangling
 import numpy as np
 import pandas as pd
 
@@ -102,10 +102,10 @@ if uploaded_file is not None:
         
         multiselected_drop = st.multiselect("Выберите столбцы для удаления: ", data.columns)
         
-        droped = drop_items(data, multiselected_drop)
+        droped = delete_columns(data, multiselected_drop)
         st.write(droped)
         
-        drop_export = download_data(droped, label="Уделны(отредактированы)")
+        drop_export = download_file(droped, label="Отредактированный вариант")
 
     if "Удалить строки" in multi_function_selector:
 
@@ -115,7 +115,7 @@ if uploaded_file is not None:
         filtered_data = filter_data(data, filter_column_selection, filtered_value_selection)
         st.write(filtered_data)
         
-        filtered_export = download_data(filtered_data, label="filtered")
+        filtered_export = download_file(filtered_data, label="Отредактированные данные")
 
     if "Удалить числовые значения" in multi_function_selector:
 
@@ -139,13 +139,13 @@ if uploaded_file is not None:
         
         if option == "Удалить значения в промежутке":
             st.write('Будут удалены все значения между ', int(start_value), 'и', int(end_value))
-            num_filtered_data = num_filter_data(data, start_value, end_value, num_filter_column_selection, param=option)
+            num_filtered_data = delete_numbers(data, start_value, end_value, num_filter_column_selection, param=option)
         else:
             st.write('Будут сохранены все значения между', int(start_value), 'и', int(end_value))
-            num_filtered_data = num_filter_data(data, start_value, end_value, num_filter_column_selection, param=option)
+            num_filtered_data = delete_numbers(data, start_value, end_value, num_filter_column_selection, param=option)
 
         st.write(num_filtered_data)
-        num_filtered_export = download_data(num_filtered_data, label="num_filtered")
+        num_filtered_export = download_file(num_filtered_data, label="num_filtered")
 
     if "Переименовать столбцы" in multi_function_selector:
 
@@ -161,10 +161,10 @@ if uploaded_file is not None:
             st.session_state.rename_dict[rename_column_selector] = rename_text_data
         st.code(st.session_state.rename_dict)
 
-        if st.button("Переименовать столбцы", help="Берет ваши данные и переименовывает столбцы по вашему желанию.."):
+        if st.button("Переименовать столбец", help="Берет ваши данные и переименовывает столбцы по вашему желанию.."):
             rename_column = rename_columns(data, st.session_state.rename_dict)
             st.write(rename_column)
-            export_rename_column = download_data(rename_column, label="rename_column")
+            export_rename_column = download_file(rename_column, label="rename_column")
             st.session_state.rename_dict = {}
  
     if "Построить график" in multi_function_selector:
@@ -183,19 +183,24 @@ if uploaded_file is not None:
         if handling_missing_value_option == "Удалить все пустые/нулевые значения":
 
             drop_null_values_option = st.radio("Выберите опцию: ", ("Удалить все пустые строки", "Удалить только те строки, которые полностью заполнены пустыми значениями"))
-            droped_null_value = handling_missing_values(data, drop_null_values_option)
+            droped_null_value = delete_missing_values(data, drop_null_values_option)
             st.write(droped_null_value)
-            export_rename_column = download_data(droped_null_value, label="fillna_column")
+            export_rename_column = download_file(droped_null_value, label="fillna_column")
         
         elif handling_missing_value_option == "Заполнить пропущенные значения":
             
             if 'missing_dict' not in st.session_state:
                 st.session_state.missing_dict = {}
             
-            fillna_column_selector = st.selectbox("Выберите столбец, в котором вы хотите заполнить NaN значения: ", options=column_with_null_values)
-            fillna_text_data = st.text_input("Выберите значение для заполнения {} столбца с NaN значениями".format(fillna_column_selector), max_chars=50)
+            fillna_column_selector = st.selectbox("Выберите столбец, в котором вы хотите заполнить NaN значения: ",
+                                                  options=column_with_null_values)
+            fillna_text_data = st.text_input("Выберите значение для заполнения {} "
+                                             "столбца с NaN значениями".format(fillna_column_selector), max_chars=50)
 
-            if st.button("Сохранить черновик", help="когда вы хотите заполнить несколько столбцов/один столбец нулевыми значениями, поэтому сначала вам нужно нажать кнопку «Сохранить черновик», чтобы обновить данные, а затем нажать кнопку «Переименовать столбцы»."):
+            if st.button("Сохранить черновик", help="когда вы хотите заполнить несколько "
+                                                    "столбцов/один столбец нулевыми значениями, "
+                                                    "поэтому сначала вам нужно нажать кнопку «Сохранить черновик», "
+                                                    "чтобы обновить данные, а затем нажать кнопку «Переименовать столбцы»."):
                 
                 if fillna_column_selector in num_category:
                     try:
@@ -207,43 +212,48 @@ if uploaded_file is not None:
 
             st.code(st.session_state.missing_dict)
 
-            if st.button("Заполнить нулевые значения", help="Принимает ваши данные и заполняет значения NaN для столбцов по вашему желанию"):
+            if st.button("Заполнить нулевые значения", help="Принимает ваши данные и "
+                                                            "заполняет значения NaN для столбцов по вашему желанию"):
 
-                fillna_column = handling_missing_values(data,handling_missing_value_option, st.session_state.missing_dict)
+                fillna_column = delete_missing_values(data,handling_missing_value_option, st.session_state.missing_dict)
                 st.write(fillna_column)
-                export_rename_column = download_data(fillna_column, label="fillna_column")
+                export_rename_column = download_file(fillna_column, label="fillna_column")
                 st.session_state.missing_dict = {}
-
-# ==========================================================================================================================================
 
     if "Слияние данных" in multi_function_selector:
         data_wrangling_option = st.radio("Выберите, что вы хотите сделать: ", ("Слияние по индексу", "Объединение по оси"))
 
         if data_wrangling_option == "Слияние по индексу":
-            data_wrangling_merging_uploaded_file = st.file_uploader("Загрузите второй файл для слияния по индексу", type=uploaded_file.name.split(".")[1])
+            data_wrangling_merging_uploaded_file = st.file_uploader("Загрузите второй "
+                                                                    "файл для слияния по индексу",
+                                                                    type=uploaded_file.name.split(".")[1])
 
             if data_wrangling_merging_uploaded_file is not None:
 
-                second_data = seconddata(data_wrangling_merging_uploaded_file, file_type=data_wrangling_merging_uploaded_file.type.split("/")[1])
+                second_data = seconddata(data_wrangling_merging_uploaded_file,
+                                         file_type=data_wrangling_merging_uploaded_file.type.split("/")[1])
                 same_columns = match_elements(data, second_data)
-                merge_key_selector = st.selectbox("Выберите столбец(столбцы) для объединения со вторым набором данных", options=same_columns)
+                merge_key_selector = st.selectbox("Выберите столбец(столбцы) для объединения со вторым набором данных",
+                                                  options=same_columns)
                 
                 merge_data = data_wrangling(data, second_data, merge_key_selector, data_wrangling_option)
                 st.write(merge_data)
-                download_data(merge_data, label="merging_on_index")
+                download_file(merge_data, label="merging_on_index")
 
         if data_wrangling_option == "Объединение по оси":
 
-            data_wrangling_concatenating_uploaded_file = st.file_uploader("Загрузите второй файл для объединения по оси", type=uploaded_file.name.split(".")[1])
+            data_wrangling_concatenating_uploaded_file = st.file_uploader("Загрузите второй "
+                                                                          "файл для объединения по оси",
+                                                                          type=uploaded_file.name.split(".")[1])
 
             if data_wrangling_concatenating_uploaded_file is not None:
 
-                second_data = seconddata(data_wrangling_concatenating_uploaded_file, file_type=data_wrangling_concatenating_uploaded_file.type.split("/")[1])
+                second_data = seconddata(data_wrangling_concatenating_uploaded_file,
+                                         file_type=data_wrangling_concatenating_uploaded_file.type.split("/")[1])
                 concatenating_data = data_wrangling(data, second_data, None, data_wrangling_option)
                 st.write(concatenating_data)
-                download_data(concatenating_data, label="concatenating_on_axis")
-        
-# ==========================================================================================================================================
+                download_file(concatenating_data, label="concatenating_on_axis")
+
     st.sidebar.info("После использования модуля нажмите кнопку «Очистить кэш», чтобы удалить все данные из папки.")
     if st.sidebar.button("Очистить кэш"):
         clear_image_cache()

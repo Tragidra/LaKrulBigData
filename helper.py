@@ -18,16 +18,9 @@ def data(data, file_type, seperator=None):
    # elif file_type == "json":
     #    data = pd.read_json(data)
     #    data = (data["devices"].apply(pd.Series))
-    
+
     elif file_type in excel_type:
         data = pd.read_excel(data)
-        st.sidebar.info("If you are using Excel file so there could be chance of getting minor error(temporary sollution: avoid the error by removing overview option from input box) so bear with it. It will be fixed soon")
-    
-    elif file_type == "plain":
-        try:
-            data = pd.read_table(data, sep=seperator)
-        except ValueError:
-            st.info("If you haven't Type the separator then dont worry about the error this error will go as you type the separator value and hit Enter.")
 
     return data
 
@@ -61,15 +54,15 @@ def match_elements(list_a, list_b):
     return non_match
 
 
-def download_data(data, label):
-    current_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata'))
+def download_file(data, label):
+    current_time = datetime.datetime.now(pytz.timezone('Europe/Moscow'))
     current_time = "{}.{}-{}-{}".format(current_time.date(), current_time.hour, current_time.minute, current_time.second)
     export_data = st.download_button(
                         label="Download {} data as CSV".format(label),
                         data=data.to_csv(),
                         file_name='{}{}.csv'.format(label, current_time),
                         mime='text/csv',
-                        help = "When You Click On Download Button You can download your {} CSV File".format(label)
+                        help = "Нажмите чтобы скачать ваши данные".format(label)
                     )
     return export_data
 
@@ -104,7 +97,7 @@ def outliers(data, num_category_outliers):
 
 
 
-def drop_items(data, selected_name):
+def delete_columns(data, selected_name):
     droped = data.drop(selected_name, axis = 1)
     return droped
 
@@ -117,7 +110,7 @@ def filter_data(data, selected_column, selected_name):
     return filtered_data
 
 
-def num_filter_data(data, start_value, end_value, column, param):
+def delete_numbers(data, start_value, end_value, column, param):
     if param == "Delete data inside the range":
         if column in num_category:
             num_filtered_data = data[~data[column].isin(range(int(start_value), int(end_value)+1))]
@@ -133,7 +126,7 @@ def rename_columns(data, column_names):
     return rename_column
 
 
-def handling_missing_values(data, option_type, dict_value=None):
+def delete_missing_values(data, option_type, dict_value=None):
     if option_type == "Drop all null value rows":
         data = data.dropna()
 
